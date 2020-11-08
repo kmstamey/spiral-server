@@ -7,16 +7,20 @@ var cors = require('cors');
 
 var indexRouter = require('./routes/index');
 
-require('../configs/db.config');
-
-
+require('./config/db.config');
 
 var app = express();
 
+
 var corsOptions = {
   origin: '*',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
+  methods: ['GET', 'PUT', 'POST']
 }
+
+//app.use(cors(corsOptions));
+//app.options('localhost', cors(corsOptions));
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -28,6 +32,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
 app.use('/api', cors(corsOptions), indexRouter);
 
 // catch 404 and forward to error handler
@@ -35,7 +40,7 @@ app.use(function(req, res, next) {
   next(createError(404));
 });
 
-const MongoStore = require('connect-mongo')(session);
+//const MongoStore = require('connect-mongo')();
 
 // error handler
 app.use(function(err, req, res, next) {
