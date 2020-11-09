@@ -7,17 +7,31 @@ const SpiralModel = require("../models/Spiral.model");
 
 const { v4: uuidv4 } = require('uuid');
 
-async function requireSession(req) {
+async function requireSession(req, res) {
+  if (!req.headers.authorization) {
+    console.log('invalid session');
+    res.status(403)
+    .type('application/json')
+    .send(JSON.stringify({"error": "Not logged in"}));
+    return;
+  }
+
   let sessionToken = req.headers.authorization.substring(7);
 
   let sessionData = await SessionModel.findOne({ token: sessionToken });
   if (sessionData === null) {
     console.log('invalid session');
+    res.status(403)
+    .type('application/json')
+    .send(JSON.stringify({"error": "Not logged in"}));
     return;
   }
 
   let userData = await UserModel.findOne({ _id: sessionData.userId });
   if (userData === null) {
+    res.status(403)
+    .type('application/json')
+    .send(JSON.stringify({"error": "Not logged in"}));
     return null;
   }
 
@@ -57,16 +71,18 @@ async function createSession(userId) {
 
 async function getCurrentSpiral(userData) {
 
-  
   let spiralData = await SpiralModel.findOne({ _id: userData.currentSpiralId });
-console.log(userData);
-console.log(spiralData);
 
   if (spiralData === null) {
     return null;
   }
 
-  
+  let spiralStartDate = new Date(spiralData.startDate);
+  let spiralStartTs = spiralStartDate.getTime();
+
+  if (Date.now() > spiralStartTs + (spiralData.duration * 1000)) {
+    return null;
+  }
 
   return spiralData;
 }
@@ -164,7 +180,7 @@ router.post('/users', function(req, res, next) {
 
 /* GET information of the currently logged-in user */
 router.get('/me/spiral', async function(req, res, next) {
-  let { sessionData, userData } = await requireSession(req);
+  let { sessionData, userData } = await requireSession(req, res);
 
   console.log(userData);
 
@@ -187,7 +203,7 @@ router.get('/me/spiral', async function(req, res, next) {
 
 /* POST create new session */
 router.post('/me/spiral', async function(req, res, next) {
-  let { sessionData, userData } = await requireSession(req);
+  let { sessionData, userData } = await requireSession(req, res);
 
   const { time, goals } = req.body;
 
