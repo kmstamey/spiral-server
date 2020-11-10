@@ -13,6 +13,9 @@ const spiralSchema = new mongoose.Schema(
     userId: {
       type: String,
       required: true
+    },
+    goals: {
+      type: [ mongoose.Schema.Types.String ]
     }
   },
   {

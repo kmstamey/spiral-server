@@ -38,6 +38,13 @@ async function requireSession(req, res) {
   return { sessionData, userData }
 }
 
+async function getRecentSpirals(userId) {
+
+  let results = await SpiralModel.find({});
+
+  return results;
+}
+
 function sessionToApi(sessionData) {
   console.log(sessionData);
 
@@ -55,7 +62,8 @@ function userToApi(userData, ownUser) {
 function spiralToApi(spiralData, ownUser) {
   return {
     "startDate": spiralData.startDate,
-    "duration": spiralData.duration
+    "duration": spiralData.duration,
+    "goals": spiralData.goals
   };
 }
 async function createSession(userId) {
@@ -201,11 +209,30 @@ router.get('/me/spiral', async function(req, res, next) {
   .send(responseData);
 });
 
+
+router.post('/me/spiral/cancel', async function(req, res, next) {
+  let { sessionData, userData } = await requireSession(req, res);
+
+  let currentSpiral = await getCurrentSpiral(userData);
+  if (currentSpiral === null) {
+    res.status(404).send();
+    return;
+  }
+
+  await SpiralModel.deleteOne({_id: currentSpiral._id});
+
+  res.status(204).send();
+
+});
+
 /* POST create new session */
 router.post('/me/spiral', async function(req, res, next) {
   let { sessionData, userData } = await requireSession(req, res);
 
   const { time, goals } = req.body;
+
+
+  let spiralGoals = goals;
 
   let timeParts = time.split(':');
   let timeMinutes = parseInt(timeParts[0]);
@@ -218,7 +245,8 @@ router.post('/me/spiral', async function(req, res, next) {
   let spiralData = await SpiralModel.create({
     startDate: Date.now(),
     duration: totalTimeSeconds,
-    userId: 0
+    userId: userData._id,
+    goals: spiralGoals
   });
 
   let result = await UserModel.findByIdAndUpdate(userData._id, { $set: {
@@ -239,5 +267,22 @@ router.get('/me/calendar', function(req, res, next) {
   
 });
 
+/* GET the calendar for the currently logged-in user */
+router.get('/me/spirals', async function(req, res, next) {
+
+  let { sessionData, userData } = await requireSession(req, res);
+  let spirals = await getRecentSpirals(userData._id);
+
+  let responseData = [];
+
+  for (let spiralData of spirals) {
+    responseData.push(spiralToApi(spiralData));
+  }
+
+  res.status(200)
+  .type('application/json')
+  .send(responseData);
+
+});
 
 module.exports = router;
