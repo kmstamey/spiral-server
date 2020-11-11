@@ -40,7 +40,7 @@ async function requireSession(req, res) {
 
 async function getRecentSpirals(userId) {
 
-  let results = await SpiralModel.find({});
+  let results = await SpiralModel.find({ userId: userId });
 
   return results;
 }
@@ -61,6 +61,7 @@ function userToApi(userData, ownUser) {
 
 function spiralToApi(spiralData, ownUser) {
   return {
+    "id": spiralData._id,
     "startDate": spiralData.startDate,
     "duration": spiralData.duration,
     "goals": spiralData.goals
@@ -284,5 +285,76 @@ router.get('/me/spirals', async function(req, res, next) {
   .send(responseData);
 
 });
+
+router.get("/me/spiral/:spiralId", async (req, res) => {
+
+  let { sessionData, userData } = await requireSession(req, res);
+
+  let spiralId = req.params.spiralId;
+  let spiralData = await SpiralModel.findOne({ _id: spiralId });
+
+  if (spiralData === null || spiralData.userId != userData._id ) {
+    res.status(404)
+    .type('application/json')
+    .send(JSON.stringify({"error": "Not found"}));
+    return null;
+  }
+
+  res.status(200)
+  .type('application/json')
+  .send(spiralToApi(spiralData));
+
+});
+
+router.delete("/me/spiral/:spiralId", async (req, res) => {
+
+  let { sessionData, userData } = await requireSession(req, res);
+
+  let spiralId = req.params.spiralId;
+
+  
+  
+  let spiralData = await SpiralModel.findOne({ _id: spiralId });
+  if (spiralData === null || spiralData.userId != userData._id ) {
+    res.status(404)
+    .type('application/json')
+    .send(JSON.stringify({"error": "Not found"}));
+    return null;
+  }
+
+  await SpiralModel.deleteOne({_id: spiralId});
+
+  res.status(204).send();
+});
+
+router.get("/me/spirals/calendar/:startDate/:endDate", (req, res) => {
+
+  let startDate = new Date(req.params.startDate);
+  let endDate = new Date(req.params.endDate);
+
+  SpiralModel.find({ startDate: { $gte: startDate, $lt: endDate }  }, null, { sort: { 'date': 'asc' } })
+    .then((results) => {
+      let responseData = [];
+      for (let spiralData of results) {
+        responseData.push(spiralToApi(spiralData));
+      }
+
+      res.status(200)
+        .type('application/json')
+        .send(responseData);
+
+    })
+    .catch((e) => {
+      console.log(e);
+      res
+        .status(500)
+        .send(JSON.stringify({
+          message: "Fail to fetch user information",
+        }));
+    });
+
+});
+
+
 
 module.exports = router;
