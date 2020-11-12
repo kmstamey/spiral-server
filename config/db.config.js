@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const MONGODB_URI = 'mongodb://localhost/spiral';
+const MONGODB_URI = process.env.MONGO_DB_URI;
 
 mongoose
   .connect(MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true})
