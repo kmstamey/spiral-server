@@ -97,12 +97,12 @@
 
 # Links
 
-# Deployment: 
+# Deployment: http://ks-spiral-client.herokuapp.com/
 
 # Github Client https://github.com/kmstamey/spiral-client 
 
 # Github Server https://github.com/kmstamey/spiral-server
 
-# Slides
+# Slides  https://docs.google.com/presentation/d/1FEbz4_wCor8Q024IP0xRQtTiXUuelpDmafjtEAgME_s/edit?usp=sharing
 
 # trello : https://trello.com/b/MrGw1vIi/spiral-project-3 
